@@ -4,24 +4,23 @@ import os
 
 app = Flask(__name__)
 
-TWILIO_SID = os.environ.get("TWILIO_ACCOUNT_SID")
-TWILIO_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
-TWILIO_WHATSAPP = "whatsapp:+14155238886"  # número sandbox
-DESTINATARIO = os.environ.get("WHATSAPP_TO")
-
-client = Client(TWILIO_SID, TWILIO_TOKEN)
+@app.route('/')
+def index():
+    return "Bot activo"
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    data = request.get_json()
-    mensaje = f"📊 Alerta de TradingView:\n{data}"
-    client.messages.create(
-        body=mensaje,
-        from_=TWILIO_WHATSAPP,
-        to=DESTINATARIO
-    )
-    return "OK", 200
+    data = request.json
+    message = data.get("message", "Alerta desde TradingView")
 
-@app.route('/')
-def home():
-    return "Bot activo", 200
+    client = Client(os.environ['TWILIO_ACCOUNT_SID'], os.environ['TWILIO_AUTH_TOKEN'])
+    client.messages.create(
+        from_='whatsapp:+14155238886',
+        to=os.environ['WHATSAPP_TO'],
+        body=message
+    )
+
+    return 'Mensaje enviado por WhatsApp', 200
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
