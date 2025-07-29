@@ -4,23 +4,30 @@ import os
 
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return "Bot activo"
-
-@app.route('/webhook', methods=['POST'])
+@app.route("/webhook", methods=["POST"])
 def webhook():
-    data = request.json
-    message = data.get("message", "Alerta desde TradingView")
+    data = request.get_json()
+    ticker = data.get("ticker")
+    evento = data.get("evento")
+    accion = data.get("accion")
 
-    client = Client(os.environ['TWILIO_ACCOUNT_SID'], os.environ['TWILIO_AUTH_TOKEN'])
+    mensaje = f"📢 ALERTA: {ticker}\nEvento: {evento}\nAcción: {accion}"
+
+    # Twilio credentials desde variables de entorno
+    account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+    client = Client(account_sid, auth_token)
+
+    from_whatsapp = os.getenv("TWILIO_WHATSAPP_FROM")  # Ej: 'whatsapp:+14155238886'
+    to_whatsapp = os.getenv("MY_WHATSAPP_TO")          # Ej: 'whatsapp:+54911XXXXXXXX'
+
     client.messages.create(
-        from_='whatsapp:+14155238886',
-        to=os.environ['WHATSAPP_TO'],
-        body=message
+        body=mensaje,
+        from_=from_whatsapp,
+        to=to_whatsapp
     )
 
-    return 'Mensaje enviado por WhatsApp', 200
+    return {"status": "Mensaje enviado"}, 200
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
